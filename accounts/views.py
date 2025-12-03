@@ -5,6 +5,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from rest_framework.authentication import TokenAuthentication
 
 from .serializers import RegisterSerializer, UserSerializer, LoginSerializer
 
@@ -32,10 +33,17 @@ class LoginView(APIView):
             user = authenticate(username=data['username'], password=data['password'])
 
             if user is not None:
-                token = Token.objects.get_or_create(user=user)
+                token, created = Token.objects.get_or_create(user=user)
                 return Response({'token': token.key}, status=status.HTTP_200_OK)
             
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
         return Response(status=status.HTTP_404_NOT_FOUND)
     
+
+class LogoutView(APIView):
+    authentication_classes = [TokenAuthentication]
+    def post(self, request: Request) -> Response:
+        request.user.auth_token.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
